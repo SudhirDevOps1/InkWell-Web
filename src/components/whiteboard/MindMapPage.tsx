@@ -2154,6 +2154,8 @@ export function MindMapPage() {
         open={generateOpen}
         onClose={() => setGenerateOpen(false)}
         aiConfig={aiConfig}
+        boardElements={activeBoard.els}
+        selectedIds={selectedIds}
         onOpenAISetup={() => {
           setGenerateOpen(false);
           setAiSetupOpen(true);

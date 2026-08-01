@@ -9,6 +9,8 @@ interface GenerateModalProps {
   onClose: () => void;
   onApply: (els: WbElement[], conns: WbConn[], title?: string) => void;
   aiConfig: AIConfig;
+  boardElements?: WbElement[];
+  selectedIds?: string[];
   onOpenAISetup: () => void;
   showToast: (msg: string) => void;
 }
@@ -37,17 +39,30 @@ export function GenerateModal({
   onClose,
   onApply,
   aiConfig,
+  boardElements = [],
+  selectedIds = [],
   onOpenAISetup,
   showToast,
 }: GenerateModalProps) {
-  const [tab, setTab] = useState<"mermaid" | "markdown" | "ai">("mermaid");
+  const [tab, setTab] = useState<"mermaid" | "markdown" | "ai" | "summarize">("ai");
   const [mermaidSrc, setMermaidSrc] = useState(MERMAID_SAMPLE);
   const [mdSrc, setMdSrc] = useState(MARKDOWN_SAMPLE);
-  const [outputType, setOutputType] = useState<"mindmap" | "architecture" | "flowchart" | "orgchart" | "sequence" | "stickies">("mindmap");
-  const [prompt, setPrompt] = useState("Microservices e-commerce system with auth, payment gateway and notifications");
+  const [outputType, setOutputType] = useState<"mindmap" | "architecture" | "flowchart" | "orgchart" | "sequence" | "stickies" | "summary">("mindmap");
+  const [prompt, setPrompt] = useState("Microservices e-commerce system with auth, DB & payment gateway");
   const [busy, setBusy] = useState(false);
 
   if (!open) return null;
+
+  // Extract text content from current active board / selected elements for AI analysis
+  const getCanvasContextText = () => {
+    const targetEls = selectedIds.length > 0
+      ? boardElements.filter((e) => selectedIds.includes(e.id))
+      : boardElements;
+    return targetEls
+      .map((e) => e.label || e.imageAlt || "")
+      .filter((t) => t.trim().length > 0)
+      .join("\n");
+  };
 
   const runMermaid = (src: string, title: string) => {
     const parsed = parseMermaid(src);
@@ -73,7 +88,7 @@ export function GenerateModal({
     return true;
   };
 
-  const handleAI = async () => {
+  const handleAI = async (customUserPrompt?: string, forceType?: typeof outputType) => {
     const endpoint = resolveEndpoint(aiConfig);
     const model = resolveModel(aiConfig);
     if (!endpoint || !model) {
@@ -83,14 +98,19 @@ export function GenerateModal({
     }
     setBusy(true);
 
+    const activeType = forceType || outputType;
+    const userMessageText = customUserPrompt || prompt;
+
     let systemPrompt = "";
-    if (outputType === "architecture") {
+    if (activeType === "summary") {
+      systemPrompt = "You are an expert AI summarizer. Analyze the text extracted from the user's whiteboard elements and summarize key ideas into a clean Markdown outline format. Use `# Main Summary Theme`, `## Key Section`, and `- Bullet points`. Reply ONLY with the raw Markdown outline text.";
+    } else if (activeType === "architecture") {
       systemPrompt = "You create system architecture & cloud topology diagrams using Mermaid flowchart syntax. Use `graph LR` (Left-to-Right layout). Use nodes with brackets: `[Frontend UI]`, `[(Database)]`, `{{API Gateway}}`, `([Microservice])`. Connect components using labelled arrows (`-->|REST API|`). Output ONLY valid raw Mermaid code inside ```mermaid ``` block.";
-    } else if (outputType === "flowchart") {
+    } else if (activeType === "flowchart") {
       systemPrompt = "You convert user processes into detailed Mermaid flowcharts. Use `graph TD` (Top-Down layout). Use decision nodes `{Condition?}`, action rectangles `[Step]`, start/end `((Start))`. Connect with labelled arrows (`-->|Yes|`). Reply ONLY with valid raw Mermaid code inside ```mermaid ``` block.";
-    } else if (outputType === "sequence" || outputType === "orgchart") {
+    } else if (activeType === "sequence" || activeType === "orgchart") {
       systemPrompt = "You convert organizational structures or step sequences into structured Mermaid flowcharts. Use `graph TD`. Group levels clearly. Reply ONLY with valid raw Mermaid code inside ```mermaid ``` block.";
-    } else if (outputType === "mindmap") {
+    } else if (activeType === "mindmap") {
       systemPrompt = "You convert user topics into rich, deeply nested Markdown outlines for Mind Maps. Use `# Main Central Theme`, `## Main Category Branch`, `### Sub-branch`, and nested `- Detailed point`. Include 4-6 main branches with 2-4 sub-points each. Reply ONLY with raw Markdown text without code block backticks.";
     } else {
       systemPrompt = "You organize concepts into a clean Markdown outline for a Kanban/Grid sticky notes board. Use `# Section Title` followed by `- Sticky item text`. Reply ONLY with raw Markdown text.";
@@ -165,15 +185,16 @@ export function GenerateModal({
 
         <div className="flex gap-1 border-b border-white/5 px-4 pt-2">
           {([
-            ["mermaid", "Mermaid", GitBranch],
-            ["markdown", "Markdown", FileText],
-            ["ai", "AI Prompt", Sparkles],
+            ["ai", "✨ AI Custom Prompt", Sparkles],
+            ["summarize", "📝 Summarize Board", FileText],
+            ["mermaid", "📊 Mermaid Code", GitBranch],
+            ["markdown", "📄 Markdown Outline", FileText],
           ] as const).map(([id, label, Icon]) => (
             <button
               key={id}
-              onClick={() => setTab(id)}
-              className={`flex items-center gap-1.5 rounded-t-xl px-4 py-2 text-xs font-bold ${
-                tab === id ? "bg-white/10 text-white" : "text-slate-500 hover:text-white"
+              onClick={() => setTab(id as any)}
+              className={`flex items-center gap-1.5 rounded-t-xl px-4 py-2 text-xs font-bold transition-colors ${
+                tab === id ? "bg-white/10 text-white border-b-2 border-cyan-400" : "text-slate-500 hover:text-white"
               }`}
             >
               <Icon className="h-3.5 w-3.5" /> {label}
@@ -296,12 +317,73 @@ export function GenerateModal({
               </div>
               <div className="flex justify-end pt-1">
                 <button
-                  onClick={handleAI}
+                  onClick={() => handleAI()}
                   disabled={busy}
                   className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 via-indigo-500 to-fuchsia-500 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-500/20 hover:opacity-95 disabled:opacity-60 transition-all"
                 >
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   {busy ? "Generating Diagram…" : `Generate ${outputType.toUpperCase()}`}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tab === "summarize" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-cyan-500/20 bg-cyan-500/10 p-4 text-xs text-cyan-200 space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-cyan-100">
+                  <FileText className="h-4 w-4 text-cyan-400" />
+                  Whiteboard Content AI Context:
+                </div>
+                <p className="text-[11px] opacity-80">
+                  {selectedIds.length > 0
+                    ? `Reading ${selectedIds.length} selected element(s) from active canvas.`
+                    : `Reading all ${boardElements.length} element(s) from current whiteboard.`}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-300">Extracted Board Text Preview:</label>
+                <div className="max-h-36 overflow-y-auto rounded-xl border border-white/10 bg-slate-950 p-3 text-xs font-mono text-slate-300">
+                  {getCanvasContextText() || <span className="italic text-slate-500">No readable text found on board elements. Add text boxes or sticky notes first.</span>}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    const txt = getCanvasContextText();
+                    const aiPrompt = `Summarize the following whiteboard notes into a structured Mind Map: \n\n${txt}`;
+                    handleAI(aiPrompt, "mindmap");
+                  }}
+                  disabled={busy || !getCanvasContextText()}
+                  className="flex items-center gap-1.5 rounded-xl bg-cyan-500 px-4 py-2 text-xs font-bold text-slate-950 hover:bg-cyan-400 disabled:opacity-50"
+                >
+                  🧠 Summarize into Mind Map
+                </button>
+
+                <button
+                  onClick={() => {
+                    const txt = getCanvasContextText();
+                    const aiPrompt = `Convert the following whiteboard process/steps into a flowchart diagram: \n\n${txt}`;
+                    handleAI(aiPrompt, "flowchart");
+                  }}
+                  disabled={busy || !getCanvasContextText()}
+                  className="flex items-center gap-1.5 rounded-xl bg-indigo-500 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-400 disabled:opacity-50"
+                >
+                  📊 Convert to Flowchart
+                </button>
+
+                <button
+                  onClick={() => {
+                    const txt = getCanvasContextText();
+                    const aiPrompt = `Organize the following whiteboard ideas into clean structured Sticky Notes: \n\n${txt}`;
+                    handleAI(aiPrompt, "stickies");
+                  }}
+                  disabled={busy || !getCanvasContextText()}
+                  className="flex items-center gap-1.5 rounded-xl bg-fuchsia-500 px-4 py-2 text-xs font-bold text-white hover:bg-fuchsia-400 disabled:opacity-50"
+                >
+                  📝 Group into Sticky Cards
                 </button>
               </div>
             </div>
