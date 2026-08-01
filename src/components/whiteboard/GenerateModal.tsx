@@ -43,6 +43,7 @@ export function GenerateModal({
   const [tab, setTab] = useState<"mermaid" | "markdown" | "ai">("mermaid");
   const [mermaidSrc, setMermaidSrc] = useState(MERMAID_SAMPLE);
   const [mdSrc, setMdSrc] = useState(MARKDOWN_SAMPLE);
+  const [outputType, setOutputType] = useState<"mindmap" | "flowchart" | "stickies">("mindmap");
   const [prompt, setPrompt] = useState("A CI/CD pipeline for a React app deployed to Vercel");
   const [busy, setBusy] = useState(false);
 
@@ -60,13 +61,13 @@ export function GenerateModal({
     return true;
   };
 
-  const handleMarkdown = () => {
-    const parsed = parseMarkdownOutline(mdSrc);
+  const handleMarkdown = (srcToParse?: string) => {
+    const parsed = parseMarkdownOutline(srcToParse || mdSrc);
     if (!parsed || parsed.els.length === 0) {
       showToast("⚠️ Add headings (#) or bullets (-) to build a mind map.");
       return;
     }
-    onApply(parsed.els, parsed.conns, "Markdown Mind Map");
+    onApply(parsed.els, parsed.conns, "Generated Mind Map");
     showToast(`✅ Created ${parsed.els.length} nodes from Markdown.`);
     onClose();
   };
@@ -80,6 +81,14 @@ export function GenerateModal({
       return;
     }
     setBusy(true);
+
+    const systemPrompt =
+      outputType === "flowchart"
+        ? "You convert descriptions into Mermaid flowcharts. Reply with ONLY a mermaid code block body starting with `graph TD` or `graph LR`. No prose, no backticks."
+        : outputType === "mindmap"
+        ? "You convert user topics into structured Markdown outlines for Mind Maps. Use `# Main Topic`, `## Subtopic`, and nested `- Bullet items`. Reply ONLY with the raw Markdown outline text. No prose, no markdown code block backticks."
+        : "You summarize topics into bullet points for sticky note outlines. Use `# Title` and `- Note bullet`. Reply ONLY with raw Markdown text without code block backticks.";
+
     try {
       const res = await fetch(endpoint, {
         method: "POST",
@@ -91,11 +100,7 @@ export function GenerateModal({
           model,
           temperature: 0.2,
           messages: [
-            {
-              role: "system",
-              content:
-                "You convert descriptions into Mermaid flowcharts. Reply with ONLY a mermaid code block body starting with `graph TD` or `graph LR`. No prose, no backticks.",
-            },
+            { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
           ],
         }),
@@ -107,13 +112,19 @@ export function GenerateModal({
       const json = await res.json();
       const text: string =
         json?.choices?.[0]?.message?.content ?? json?.choices?.[0]?.text ?? "";
-      const cleaned = text.replace(/```(?:mermaid)?/gi, "").trim();
+      const cleaned = text.replace(/```(?:mermaid|markdown)?/gi, "").trim();
       if (!cleaned) {
         showToast("⚠️ Empty response from the model.");
         return;
       }
-      setMermaidSrc(cleaned);
-      if (!runMermaid(cleaned, "AI Diagram")) setTab("mermaid");
+
+      if (outputType === "flowchart") {
+        setMermaidSrc(cleaned);
+        if (!runMermaid(cleaned, "AI Flowchart")) setTab("mermaid");
+      } else {
+        setMdSrc(cleaned);
+        handleMarkdown(cleaned);
+      }
     } catch {
       showToast("⚠️ Request failed (CORS/offline). Try Groq or a local Ollama endpoint.");
     } finally {
@@ -225,11 +236,38 @@ export function GenerateModal({
                   <Settings2 className="h-3 w-3" /> AI Setup
                 </button>
               </div>
+
+              {/* Output Target Selector */}
+              <div>
+                <label className="mb-1.5 block text-xs font-semibold text-slate-300">Choose Output Type:</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: "mindmap", label: "🧠 Mind Map", desc: "Hierarchical tree layout" },
+                    { id: "flowchart", label: "📊 Flowchart", desc: "Mermaid process diagram" },
+                    { id: "stickies", label: "📝 Sticky Notes", desc: "Markdown topic outline" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setOutputType(opt.id as any)}
+                      className={`flex flex-col items-start rounded-xl border p-2.5 text-left transition-all ${
+                        outputType === opt.id
+                          ? "border-violet-500 bg-violet-500/15 text-white"
+                          : "border-white/10 bg-slate-950/60 text-slate-400 hover:border-white/20 hover:text-white"
+                      }`}
+                    >
+                      <span className="text-xs font-bold">{opt.label}</span>
+                      <span className="text-[10px] opacity-75">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                rows={6}
-                placeholder="Describe the diagram you want…"
+                rows={5}
+                placeholder="Describe what content, topic, flowchart or mind map you want to generate…"
                 className="w-full rounded-2xl border border-white/10 bg-slate-950 p-4 text-sm text-white outline-none focus:border-violet-400"
               />
               <div className="flex flex-wrap gap-1.5">
@@ -237,6 +275,7 @@ export function GenerateModal({
                   "Microservices architecture with API gateway",
                   "Student exam preparation plan",
                   "Git branching workflow",
+                  "Frontend framework comparison mind map",
                 ].map((p) => (
                   <button key={p} onClick={() => setPrompt(p)} className="rounded-full bg-white/5 px-2.5 py-1 text-[10px] text-slate-400 hover:text-white">
                     {p}
@@ -250,7 +289,7 @@ export function GenerateModal({
                   className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-5 py-2 text-xs font-bold text-white disabled:opacity-60"
                 >
                   {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                  {busy ? "Generating…" : "Generate diagram"}
+                  {busy ? "Generating…" : `Generate ${outputType === "mindmap" ? "Mind Map" : outputType === "flowchart" ? "Flowchart" : "Sticky Notes"}`}
                 </button>
               </div>
             </div>
