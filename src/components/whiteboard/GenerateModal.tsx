@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { X, GitBranch, FileText, Sparkles, Loader2, Settings2 } from "lucide-react";
+import { X, GitBranch, FileText, Sparkles, Loader2, Settings2, Image as ImageIcon } from "lucide-react";
 import { parseMermaid, parseMarkdownOutline } from "../../utils/mermaidConvert";
 import { AIConfig, resolveEndpoint, resolveModel } from "./AISetupModal";
 import type { WbElement, WbConn } from "../../types/whiteboard";
+import { uid } from "../../utils/whiteboardUtils";
 
 interface GenerateModalProps {
   open: boolean;
@@ -44,11 +45,12 @@ export function GenerateModal({
   onOpenAISetup,
   showToast,
 }: GenerateModalProps) {
-  const [tab, setTab] = useState<"mermaid" | "markdown" | "ai" | "summarize">("ai");
+  const [tab, setTab] = useState<"mermaid" | "markdown" | "ai" | "summarize" | "image">("ai");
   const [mermaidSrc, setMermaidSrc] = useState(MERMAID_SAMPLE);
   const [mdSrc, setMdSrc] = useState(MARKDOWN_SAMPLE);
   const [outputType, setOutputType] = useState<"mindmap" | "architecture" | "flowchart" | "orgchart" | "sequence" | "stickies" | "summary">("mindmap");
   const [prompt, setPrompt] = useState("Microservices e-commerce system with auth, DB & payment gateway");
+  const [imagePrompt, setImagePrompt] = useState("A futuristic neon cybernetic brain connected to digital circuits, vibrant colors 8k HD");
   const [busy, setBusy] = useState(false);
 
   if (!open) return null;
@@ -183,17 +185,18 @@ export function GenerateModal({
           </button>
         </div>
 
-        <div className="flex gap-1 border-b border-white/5 px-4 pt-2">
+        <div className="flex gap-1 border-b border-white/5 px-4 pt-2 overflow-x-auto scrollbar-none">
           {([
-            ["ai", "✨ AI Custom Prompt", Sparkles],
+            ["ai", "✨ AI Diagram", Sparkles],
+            ["image", "🖼️ AI Image", ImageIcon],
             ["summarize", "📝 Summarize Board", FileText],
             ["mermaid", "📊 Mermaid Code", GitBranch],
-            ["markdown", "📄 Markdown Outline", FileText],
+            ["markdown", "📄 Markdown", FileText],
           ] as const).map(([id, label, Icon]) => (
             <button
               key={id}
               onClick={() => setTab(id as any)}
-              className={`flex items-center gap-1.5 rounded-t-xl px-4 py-2 text-xs font-bold transition-colors ${
+              className={`flex items-center gap-1.5 shrink-0 rounded-t-xl px-3.5 py-2 text-xs font-bold transition-colors ${
                 tab === id ? "bg-white/10 text-white border-b-2 border-cyan-400" : "text-slate-500 hover:text-white"
               }`}
             >
@@ -384,6 +387,86 @@ export function GenerateModal({
                   className="flex items-center gap-1.5 rounded-xl bg-fuchsia-500 px-4 py-2 text-xs font-bold text-white hover:bg-fuchsia-400 disabled:opacity-50"
                 >
                   📝 Group into Sticky Cards
+                </button>
+              </div>
+            </div>
+          )}
+
+          {tab === "image" && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/10 p-4 text-xs text-fuchsia-200 space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-fuchsia-100">
+                  <ImageIcon className="h-4 w-4 text-fuchsia-400" />
+                  Free Keyless AI Image Generator (Pollinations AI)
+                </div>
+                <p className="text-[11px] opacity-80">
+                  Describe what image you want AI to draw. Generated image will be directly added onto your whiteboard canvas!
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-semibold text-slate-300">Custom Image Prompt:</label>
+                <textarea
+                  value={imagePrompt}
+                  onChange={(e) => setImagePrompt(e.target.value)}
+                  rows={4}
+                  placeholder="Describe the image (e.g. A futuristic glassmorphism dashboard UI mockup, isometric 3D render)..."
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950 p-4 text-sm text-white outline-none focus:border-fuchsia-400"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  "3D isometric software architecture cloud servers neon glow",
+                  "Minimalist mind map brain illustration digital vector art",
+                  "Cyberpunk neon student study workspace 4k detailed",
+                  "Modern SaaS dashboard UI layout clean dark mode mockup",
+                ].map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setImagePrompt(p)}
+                    className="rounded-full bg-white/5 border border-white/5 px-2.5 py-1 text-[10px] text-slate-400 hover:text-white hover:border-fuchsia-500/40"
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  onClick={() => {
+                    if (!imagePrompt.trim()) return;
+                    setBusy(true);
+                    const encoded = encodeURIComponent(imagePrompt.trim());
+                    const imgUrl = `https://image.pollinations.ai/prompt/${encoded}?width=1024&height=768&nologo=true&seed=${Math.floor(Math.random() * 1000000)}`;
+
+                    const newImageElement: WbElement = {
+                      id: uid(),
+                      type: "image",
+                      x: 200,
+                      y: 150,
+                      w: 480,
+                      h: 360,
+                      label: imagePrompt,
+                      imageAlt: imagePrompt,
+                      imageSrc: imgUrl,
+                      color: "#d946ef",
+                      fill: "transparent",
+                      strokeWidth: 2,
+                      strokeStyle: "solid",
+                      opacity: 1,
+                    };
+
+                    onApply([newImageElement], [], "AI Generated Image");
+                    showToast("🖼️ AI Image added to canvas!");
+                    setBusy(false);
+                    onClose();
+                  }}
+                  disabled={busy || !imagePrompt.trim()}
+                  className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-fuchsia-500 to-pink-500 px-6 py-2.5 text-xs font-bold text-white shadow-lg shadow-fuchsia-500/20 hover:opacity-95 disabled:opacity-60 transition-all"
+                >
+                  {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+                  {busy ? "Generating Image…" : "Generate & Add Image to Board"}
                 </button>
               </div>
             </div>
