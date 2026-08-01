@@ -1,172 +1,164 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" shape-rendering="geometricPrecision">
   <defs>
-    <!-- Premium Gradients for Logo -->
-    <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Brand Gradient -->
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#06B6D4"/>
-      <stop offset="40%" stop-color="#8B5CF6"/>
+      <stop offset="50%" stop-color="#8B5CF6"/>
       <stop offset="100%" stop-color="#EC4899"/>
     </linearGradient>
-
-    <!-- Metallic Pen Body Gradient -->
-    <linearGradient id="penMetal" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#F8FAFC"/>
-      <stop offset="30%" stop-color="#FFFFFF"/>
-      <stop offset="70%" stop-color="#CBD5E1"/>
-      <stop offset="100%" stop-color="#94A3B8"/>
+    
+    <!-- Bright Gradient for Glow -->
+    <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#22D3EE"/>
+      <stop offset="50%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#F472B6"/>
     </linearGradient>
 
-    <!-- Glowing Effects & Shadows -->
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="6" result="blur"/>
+    <!-- Metallic 3D Gradient (Light from top-left) -->
+    <linearGradient id="penMetal" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#94A3B8"/>
+      <stop offset="25%" stop-color="#F8FAFC"/>
+      <stop offset="60%" stop-color="#E2E8F0"/>
+      <stop offset="100%" stop-color="#64748B"/>
+    </linearGradient>
+
+    <!-- Matte Grip -->
+    <linearGradient id="penGrip" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="50%" stop-color="#334155"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+
+    <!-- Canvas Dots -->
+    <pattern id="canvasDots" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="8" cy="8" r="1.2" fill="#334155" opacity="0.6"/>
+    </pattern>
+
+    <!-- Enhanced Shadows for Transparency -->
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="15" flood-color="#8B5CF6" flood-opacity="0.25"/>
+      <feDropShadow dx="0" dy="20" stdDeviation="25" flood-color="#000000" flood-opacity="0.4"/>
+    </filter>
+
+    <filter id="penShadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="-10" dy="18" stdDeviation="12" flood-color="#000000" flood-opacity="0.6"/>
+    </filter>
+
+    <filter id="minGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
       <feMerge>
         <feMergeNode in="blur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
 
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#8B5CF6" flood-opacity="0.4"/>
+    <filter id="neonGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="blur1"/>
+      <feGaussianBlur stdDeviation="2" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
     </filter>
 
-    <!-- Ultra HD Pen Shadow (3D Pop) -->
-    <filter id="penDrop" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="-6" dy="18" stdDeviation="12" flood-color="#000000" flood-opacity="0.8"/>
-    </filter>
-
-    <!-- Inner Shadow for Deep Board -->
-    <filter id="innerShadow">
-      <feOffset dx="0" dy="4"/>
-      <feGaussianBlur stdDeviation="6" result="offset-blur"/>
-      <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
-      <feFlood flood-color="black" flood-opacity="0.7" result="color"/>
-      <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
-      <feComposite operator="over" in="shadow" in2="SourceGraphic"/>
-    </filter>
+    <!-- "InkWell" Text Path -->
+    <path id="inkwellText" d="
+      M 256 180 L 264 180 M 260 180 L 260 210 M 256 210 L 264 210 
+      M 272 210 L 272 180 Q 278 170 284 180 L 284 210 
+      M 292 180 L 292 210 M 292 195 L 304 180 M 292 195 L 304 210 
+      M 314 180 L 320 210 L 326 195 L 332 210 L 338 180 
+      M 348 210 L 348 180 Q 356 180 356 195 L 348 195 
+      M 368 180 L 368 210 M 378 180 L 378 210
+    " fill="none" stroke="url(#glowGrad)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
   </defs>
 
-  <!-- Space Grade Dark Background -->
-  <rect width="512" height="512" rx="96" fill="#020617"/>
+  <!-- Note: The solid background rect has been removed for full transparency -->
 
-  <!-- Tech Grid (Background) -->
-  <g stroke="#1E293B" stroke-width="1" opacity="0.3">
-    <line x1="0" y1="64" x2="512" y2="64"/>
-    <line x1="0" y1="128" x2="512" y2="128"/>
-    <line x1="0" y1="192" x2="512" y2="192"/>
-    <line x1="0" y1="256" x2="512" y2="256"/>
-    <line x1="0" y1="320" x2="512" y2="320"/>
-    <line x1="0" y1="384" x2="512" y2="384"/>
-    <line x1="0" y1="448" x2="512" y2="448"/>
-    
-    <line x1="64" y1="0" x2="64" y2="512"/>
-    <line x1="128" y1="0" x2="128" y2="512"/>
-    <line x1="192" y1="0" x2="192" y2="512"/>
-    <line x1="256" y1="0" x2="256" y2="512"/>
-    <line x1="320" y1="0" x2="320" y2="512"/>
-    <line x1="384" y1="0" x2="384" y2="512"/>
-    <line x1="448" y1="0" x2="448" y2="512"/>
+  <!-- ===== 1. DIGITAL BOARD ===== -->
+  <rect x="76" y="76" width="360" height="280" rx="28" fill="#0F172A" stroke="url(#accent)" stroke-width="5" filter="url(#softShadow)"/>
+  <rect x="96" y="96" width="320" height="240" rx="14" fill="#0B1120"/>
+  <rect x="96" y="96" width="320" height="240" rx="14" fill="url(#canvasDots)"/>
+
+  <!-- UI Hints -->
+  <rect x="120" y="112" width="70" height="5" rx="2.5" fill="#334155" opacity="0.8"/>
+  <circle cx="376" cy="114.5" r="3.5" fill="#06B6D4" filter="url(#minGlow)"/>
+  <circle cx="390" cy="114.5" r="3.5" fill="#8B5CF6" filter="url(#minGlow)"/>
+  <circle cx="404" cy="114.5" r="3.5" fill="#EC4899" filter="url(#minGlow)"/>
+  <circle cx="120" cy="315" r="3" fill="#475569" opacity="0.6"/>
+  <rect x="130" y="313" width="30" height="4" rx="2" fill="#475569" opacity="0.6"/>
+
+  <!-- ===== 2. MIND-MAP NODES (Left) ===== -->
+  <circle cx="170" cy="210" r="24" fill="url(#accent)" filter="url(#minGlow)"/>
+  <circle cx="170" cy="210" r="10" fill="#0B1120"/>
+
+  <g stroke="url(#accent)" stroke-width="4" stroke-linecap="round" opacity="0.85">
+    <path d="M146 210 C120 185 105 170 95 160"/>
+    <path d="M194 210 C220 185 235 170 245 160"/>
+    <path d="M146 210 C120 235 105 250 95 260"/>
+    <path d="M194 210 C220 235 235 250 245 260"/>
   </g>
 
-  <!-- Premium Digital Whiteboard Canvas -->
-  <rect x="76" y="76" width="360" height="280" rx="40" fill="#0F172A" stroke="url(#primaryGrad)" stroke-width="12" filter="url(#shadow)"/>
-
-  <!-- Inner Writing Area -->
-  <rect x="96" y="96" width="320" height="240" rx="24" fill="#111827" filter="url(#innerShadow)"/>
-
-  <!-- Advanced Mind Map / Flowchart Nodes -->
-  <!-- Central AI Core -->
-  <circle cx="256" cy="216" r="32" fill="url(#primaryGrad)" filter="url(#glow)"/>
-  <circle cx="256" cy="216" r="16" fill="#020617"/>
-
-  <!-- Smart Branching Paths (Mind Map Connections) -->
-  <g>
-    <!-- Top Left Branch -->
-    <path d="M224 216 C180 180 160 160 140 150" stroke="url(#primaryGrad)" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.8"/>
-    <circle cx="140" cy="150" r="16" fill="#8B5CF6" filter="url(#glow)"/>
-    <circle cx="140" cy="150" r="6" fill="#020617"/>
-
-    <!-- Top Right Branch -->
-    <path d="M288 216 C320 180 340 160 360 150" stroke="url(#primaryGrad)" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.8"/>
-    <circle cx="360" cy="150" r="16" fill="#EC4899" filter="url(#glow)"/>
-    <circle cx="360" cy="150" r="6" fill="#020617"/>
-
-    <!-- Bottom Left Branch -->
-    <path d="M224 216 C190 250 170 270 150 290" stroke="url(#primaryGrad)" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.8"/>
-    <circle cx="150" cy="290" r="16" fill="#06B6D4" filter="url(#glow)"/>
-    <circle cx="150" cy="290" r="6" fill="#020617"/>
-
-    <!-- Bottom Right Branch -->
-    <path d="M288 216 C320 250 340 270 360 290" stroke="url(#primaryGrad)" stroke-width="6" fill="none" stroke-linecap="round" opacity="0.8"/>
-    <circle cx="360" cy="290" r="16" fill="#F59E0B" filter="url(#glow)"/>
-    <circle cx="360" cy="290" r="6" fill="#020617"/>
+  <g fill="#8B5CF6" filter="url(#minGlow)">
+    <circle cx="95" cy="160" r="10"/>
+    <circle cx="245" cy="160" r="10"/>
+    <circle cx="95" cy="260" r="10"/>
+    <circle cx="245" cy="260" r="10"/>
+  </g>
+  <g fill="#0B1120">
+    <circle cx="95" cy="160" r="4"/>
+    <circle cx="245" cy="160" r="4"/>
+    <circle cx="95" cy="260" r="4"/>
+    <circle cx="245" cy="260" r="4"/>
   </g>
 
-  <!-- AI Recognition & Smart Circuit Details -->
-  <g stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" opacity="0.5">
-    <path d="M120 130 L140 130 L140 150"/>
-    <path d="M380 130 L360 130 L360 150"/>
-    <path d="M120 310 L140 310 L140 290"/>
-    <path d="M380 310 L360 310 L360 290"/>
-    
-    <!-- Floating Energy Particles -->
-    <circle cx="180" cy="180" r="3" fill="#A78BFA" filter="url(#glow)"/>
-    <circle cx="330" cy="180" r="3" fill="#A78BFA" filter="url(#glow)"/>
-    <circle cx="180" cy="260" r="3" fill="#A78BFA" filter="url(#glow)"/>
-    <circle cx="330" cy="260" r="3" fill="#A78BFA" filter="url(#glow)"/>
-  </g>
+  <!-- ===== 3. GLOWING "InkWell" TEXT (Right) ===== -->
+  <use href="#inkwellText" stroke="url(#glowGrad)" stroke-width="18" opacity="0.2" filter="url(#neonGlow)">
+    <animate attributeName="opacity" values="0.1;0.4;0.1" dur="3s" repeatCount="indefinite"/>
+  </use>
+  <use href="#inkwellText" stroke="url(#glowGrad)" stroke-width="10" opacity="0.5" filter="url(#minGlow)">
+    <animate attributeName="opacity" values="0.4;0.7;0.4" dur="3s" repeatCount="indefinite"/>
+  </use>
+  <use href="#inkwellText" stroke="url(#glowGrad)" stroke-width="7" filter="url(#neonGlow)">
+    <animate attributeName="opacity" values="0.85;1;0.85" dur="3s" repeatCount="indefinite"/>
+  </use>
 
-  <!-- Tablet Stand -->
-  <rect x="196" y="380" width="120" height="20" rx="10" fill="#334155"/>
-  <rect x="156" y="406" width="200" height="24" rx="12" fill="#475569"/>
-  <rect x="166" y="410" width="180" height="4" rx="2" fill="#64748B" opacity="0.5"/>
+  <!-- ========================================================== -->
+  <!-- ===== 4. 🖊️ PREMIUM STYLUS (Tip Neeche, Eraser Uper) ===== -->
+  <!-- ========================================================== -->
+  <g transform="translate(415, 145) rotate(-12)" filter="url(#penShadow)">
+    
+    <!-- 1. Tapered Body -->
+    <path d="M-11 0 L11 0 L10 155 C10 158 8 160 6 160 L-6 160 C-8 160 -10 158 -10 155 Z" fill="url(#penMetal)"/>
+    
+    <!-- 2. Left Glass Shine -->
+    <path d="M-8 0 L-8 150 L-5 150 L-5 0 Z" fill="#FFFFFF" opacity="0.4"/>
+    
+    <!-- 3. Right Edge Shadow -->
+    <path d="M6 0 L6 150 L8 150 L8 0 Z" fill="#000000" opacity="0.3"/>
 
-  <!-- ================= JHAAKAS (STYLISH) PEN / STYLUS ================= -->
-  <!-- Positioned at a dynamic angle, overlapping the board and stand -->
-  <g transform="rotate(-18 420 430)" filter="url(#penDrop)">
-    
-    <!-- 1. Main Metallic Body -->
-    <rect x="400" y="230" width="30" height="170" rx="10" fill="url(#penMetal)"/>
-    
-    <!-- 2. Eraser / Top Button (Back of the pen) -->
-    <rect x="400" y="400" width="30" height="16" rx="6" fill="url(#primaryGrad)"/>
-    <circle cx="415" cy="408" r="4" fill="#FFFFFF" opacity="0.4"/>
+    <!-- 4. Matte Grip Zone -->
+    <rect x="-10" y="85" width="20" height="30" rx="4" fill="url(#penGrip)"/>
 
-    <!-- 3. Premium Ergonomic Grip Area (with Knurled Texture) -->
-    <rect x="400" y="310" width="30" height="50" rx="6" fill="#1E293B"/>
-    <!-- Grip Texture Lines -->
-    <g stroke="#475569" stroke-width="1.5" opacity="0.6">
-      <line x1="402" y1="318" x2="428" y2="318"/>
-      <line x1="402" y1="323" x2="428" y2="323"/>
-      <line x1="402" y1="328" x2="428" y2="328"/>
-      <line x1="402" y1="333" x2="428" y2="333"/>
-      <line x1="402" y1="338" x2="428" y2="338"/>
-      <line x1="402" y1="343" x2="428" y2="343"/>
-      <line x1="402" y1="348" x2="428" y2="348"/>
-      <line x1="402" y1="353" x2="428" y2="353"/>
-    </g>
+    <!-- 5. AI Smart Glow Ring -->
+    <rect x="-12" y="148" width="24" height="8" rx="4" fill="#1E293B"/>
+    <rect x="-11" y="150" width="22" height="4" rx="2" fill="url(#glowGrad)" filter="url(#minGlow)">
+      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
+    </rect>
 
-    <!-- 4. Smart AI Glow Ring (Near Tip) -->
-    <rect x="396" y="222" width="38" height="8" rx="4" fill="#8B5CF6" filter="url(#glow)"/>
-    <rect x="396" y="222" width="38" height="3" rx="1.5" fill="#FFFFFF" opacity="0.8"/>
+    <!-- 6. Premium Eraser / Top Cap -->
+    <rect x="-11" y="-4" width="22" height="14" rx="5" fill="url(#accent)"/>
 
-    <!-- 5. Sleek Metallic Clip -->
-    <path d="M 430 260 L 448 260 C 452 260 452 280 448 280 L 430 280 Z" fill="url(#penMetal)" stroke="#94A3B8" stroke-width="1.5"/>
-    <circle cx="442" cy="270" r="5" fill="#EC4899" filter="url(#glow)"/>
-
-    <!-- 6. Next-Gen Stylus Tip (Smooth Curve) -->
-    <path d="M 400 230 Q 415 215 415 185 Q 415 215 430 230 Z" fill="#334155"/>
+    <!-- 7. Conical Tip -->
+    <path d="M-10 155 C-8 170 -2 180 0 190 C2 180 8 170 10 155 Z" fill="#0B1120"/>
     
-    <!-- 7. Conductive Rubber Nib (The writing point) -->
-    <ellipse cx="415" cy="185" rx="4" ry="8" fill="#111827"/>
+    <!-- 8. Writing Nib -->
+    <ellipse cx="0" cy="190" rx="4" ry="7" fill="#000000"/>
+    <ellipse cx="0" cy="188" rx="2" ry="3" fill="#475569"/>
     
-    <!-- 8. Active Writing Dot (Shows it's alive) -->
-    <circle cx="415" cy="181" r="3" fill="#22D3EE" filter="url(#glow)"/>
-    
-    <!-- 9. Premium Branding on Pen Body -->
-    <rect x="406" y="285" width="18" height="18" rx="4" fill="#020617" opacity="0.1"/>
-    <text x="415" y="298" font-family="Arial, sans-serif" font-size="8" fill="#64748B" text-anchor="middle" font-weight="bold" letter-spacing="1">IW</text>
-    
-    <!-- 10. Reflective Highlight (For that ultra-premium glass-like shine) -->
-    <rect x="404" y="240" width="4" height="60" rx="2" fill="#FFFFFF" opacity="0.4"/>
-    <rect x="404" y="315" width="4" height="40" rx="2" fill="#FFFFFF" opacity="0.3"/>
+    <!-- 9. Active Dot (Pulse) -->
+    <circle cx="0" cy="195" r="3" fill="#22D3EE" filter="url(#minGlow)">
+      <animate attributeName="opacity" values="0.4;1;0.4" dur="2s" repeatCount="indefinite"/>
+    </circle>
   </g>
 </svg>
