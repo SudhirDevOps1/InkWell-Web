@@ -56,7 +56,7 @@ import { formatRichText, hasRichFormatting } from "../../utils/richTextFormatter
 import { TextEditorModal } from "./TextEditorModal";
 import { AISetupModal, AIConfig, DEFAULT_AI_CONFIG } from "./AISetupModal";
 import { GenerateModal } from "./GenerateModal";
-import { normalizeMediaUrl } from "../../utils/mediaHelpers";
+import { normalizeMediaUrl, compressImageFile } from "../../utils/mediaHelpers";
 import type { GifResult } from "../../utils/mediaHelpers";
 
 const STORAGE_KEY = "flowtrack_whiteboards_v3";
@@ -170,8 +170,25 @@ function loadInitialBoards(): WbBoard[] {
 function saveBoardsToStorage(boards: WbBoard[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(boards));
-  } catch {
-    // ignore
+  } catch (err: any) {
+    if (err?.name === "QuotaExceededError" || err?.code === 22) {
+      console.warn("Storage quota exceeded, pruning heavy media payloads for fallback save");
+      try {
+        // Fallback: strip heavy Base64 image/video data strings if storage quota is hit
+        const pruned = boards.map((b) => ({
+          ...b,
+          els: b.els.map((el) => {
+            if (el.imageSrc && el.imageSrc.length > 100000) {
+              return { ...el, imageSrc: undefined, label: `${el.label || "Media"} (Pruned due to storage quota)` };
+            }
+            return el;
+          }),
+        }));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(pruned));
+      } catch {
+        /* best effort */
+      }
+    }
   }
 }
 
@@ -531,17 +548,24 @@ export function MindMapPage() {
   const performDeleteSelected = useCallback(() => {
     if (selectedIds.length === 0) return;
     // BUG FIX: never delete LOCKED elements — skip them and warn the user.
-    const deletable = new Set(
-      activeBoard.els
-        .filter((el) => selectedIds.includes(el.id) && !el.locked)
-        .map((el) => el.id)
-    );
+    const deletableElements = activeBoard.els.filter((el) => selectedIds.includes(el.id) && !el.locked);
+    const deletable = new Set(deletableElements.map((el) => el.id));
     const lockedCount = selectedIds.length - deletable.size;
     if (deletable.size === 0) {
       showToast("🔒 All selected items are locked. Unlock them first.");
       setSelectedIds([]);
       return;
     }
+    // Clean up local blob object URLs to prevent memory leaks
+    deletableElements.forEach((el) => {
+      if (el.imageSrc && el.imageSrc.startsWith("blob:")) {
+        try {
+          URL.revokeObjectURL(el.imageSrc);
+        } catch {
+          /* ignore */
+        }
+      }
+    });
     const nextEls = activeBoard.els.filter((el) => !deletable.has(el.id));
     const nextConns = activeBoard.conns.filter(
       (c) => !deletable.has(c.fromId) && !deletable.has(c.toId)
@@ -821,26 +845,25 @@ export function MindMapPage() {
   };
 
   const handleImageFile = useCallback(
-    (file: File, point?: { x: number; y: number }) => {
+    async (file: File, point?: { x: number; y: number }) => {
       if (!file.type.startsWith("image/")) {
         showToast("⚠️ Please choose a valid image file.");
         return;
       }
-      if (file.size > 8 * 1024 * 1024) {
-        showToast("⚠️ Image must be smaller than 8 MB.");
+      if (file.size > 15 * 1024 * 1024) {
+        showToast("⚠️ Image must be smaller than 15 MB.");
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        const src = String(reader.result || "");
+      try {
+        const src = await compressImageFile(file);
         const image = new Image();
         image.onload = () => {
           const maxW = 500;
           const maxH = 360;
-          const scale = Math.min(1, maxW / image.naturalWidth, maxH / image.naturalHeight);
-          const w = Math.max(80, image.naturalWidth * scale);
-          const h = Math.max(60, image.naturalHeight * scale);
+          const scale = Math.min(1, maxW / (image.naturalWidth || maxW), maxH / (image.naturalHeight || maxH));
+          const w = Math.max(80, (image.naturalWidth || maxW) * scale);
+          const h = Math.max(60, (image.naturalHeight || maxH) * scale);
           const canvasW = svgRef.current?.clientWidth || 1000;
           const canvasH = svgRef.current?.clientHeight || 700;
           const center = point || {
@@ -869,8 +892,9 @@ export function MindMapPage() {
           showToast("🖼️ Image added. Resize and rotate it from the canvas handles.");
         };
         image.src = src;
-      };
-      reader.readAsDataURL(file);
+      } catch {
+        showToast("⚠️ Failed to load image.");
+      }
     },
     [activeBoard, pushChange, showToast]
   );
