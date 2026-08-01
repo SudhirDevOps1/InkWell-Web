@@ -273,7 +273,12 @@ export function parseMarkdownOutline(src: string): { els: WbElement[]; conns: Wb
     els.push(el);
 
     parentStack.length = item.depth;
-    const parent = parentStack[item.depth - 1];
+    // Bug #13 Fix: Find nearest defined parent by walking backwards through
+    // the stack. Handles skipped heading levels (e.g. # → ###) gracefully.
+    let parent: typeof els[0] | undefined;
+    for (let d = item.depth - 1; d >= 0; d--) {
+      if (parentStack[d]) { parent = parentStack[d]; break; }
+    }
     if (parent) {
       conns.push({
         id: uid(),

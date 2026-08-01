@@ -78,12 +78,15 @@ export function DrawingStudioBar({
 
   // ── Compact mode: thin single-row bar that doesn't block drawing ──────
   if (!expanded) {
+    // Bug #8 Fix: useDraggable applies inline transform: translate3d(...) which
+    // overrides CSS -translate-x-1/2. Solution: outer div takes drag.style (positioning),
+    // inner div applies -translate-x-1/2 centering independently.
     return (
       <div
-        className="pointer-events-none absolute left-1/2 top-[52px] sm:top-[60px] z-40 -translate-x-1/2"
+        className="pointer-events-none absolute left-1/2 top-[52px] sm:top-[60px] z-40"
         style={drag.style}
       >
-        <div className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-white/10 bg-slate-900/90 px-2 py-1.5 shadow-xl backdrop-blur-xl">
+        <div className="-translate-x-1/2 pointer-events-auto flex items-center gap-1.5 rounded-full border border-white/10 bg-slate-900/90 px-2 py-1.5 shadow-xl backdrop-blur-xl">
           {/* BUG FIX: grip must NOT be a <button> — useDraggable skips buttons */}
           <div
             role="button"

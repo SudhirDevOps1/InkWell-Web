@@ -36,20 +36,22 @@ export const WhiteboardMiniMap: React.FC<WhiteboardMiniMapProps> = ({
 
   const scale = Math.min(mapW / totalW, mapH / totalH);
 
-  // Viewport box in minimap coordinates
-  const vpX = (-pan.x - minX) * scale;
-  const vpY = (-pan.y - minY) * scale;
+  // Bug #9 Fix: Divide pan by zoom to get correct world-space viewport position
+  const vpX = (-pan.x / zoom - minX) * scale;
+  const vpY = (-pan.y / zoom - minY) * scale;
   const vpW = (canvasSize.width / zoom) * scale;
   const vpH = (canvasSize.height / zoom) * scale;
 
   const handleMinimapClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    const worldX = minX + clickX / scale;
-    const worldY = minY + clickY / scale;
-
+    // Bug #9 Fix: Use SVG matrix transform for accurate coordinate conversion
+    // instead of raw CSS pixel offsets which don't account for aspect ratio
+    const svg = e.currentTarget;
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const svgPt = pt.matrixTransform(svg.getScreenCTM()!.inverse());
+    const worldX = minX + svgPt.x / scale;
+    const worldY = minY + svgPt.y / scale;
     onPanTo({
       x: -worldX * zoom + canvasSize.width / 2,
       y: -worldY * zoom + canvasSize.height / 2,
@@ -90,6 +92,12 @@ export const WhiteboardMiniMap: React.FC<WhiteboardMiniMapProps> = ({
           viewBox={`0 0 ${mapW} ${mapH}`}
           onClick={handleMinimapClick}
         >
+          <defs>
+            {/* Bug #9 Fix: Clip viewport rect properly instead of manual Math.max/min */}
+            <clipPath id="mm-clip">
+              <rect x={0} y={0} width={mapW} height={mapH} />
+            </clipPath>
+          </defs>
           <g
             transform={`scale(${scale}) translate(${-minX}, ${-minY})`}
           >
@@ -107,16 +115,17 @@ export const WhiteboardMiniMap: React.FC<WhiteboardMiniMapProps> = ({
             ))}
           </g>
 
-          {/* Viewport Frame */}
+          {/* Viewport Frame — clipped to minimap bounds */}
           <rect
-            x={Math.max(0, vpX)}
-            y={Math.max(0, vpY)}
-            width={Math.min(mapW, vpW)}
-            height={Math.min(mapH, vpH)}
+            x={vpX}
+            y={vpY}
+            width={vpW}
+            height={vpH}
             fill="rgba(56, 189, 248, 0.15)"
             stroke="#38bdf8"
             strokeWidth="1.5"
             rx="2"
+            clipPath="url(#mm-clip)"
             className="pointer-events-none"
           />
         </svg>

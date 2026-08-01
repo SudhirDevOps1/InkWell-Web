@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useReducer } from "react";
 import {
   Undo2,
   Redo2,
@@ -223,16 +223,42 @@ export function MindMapPage() {
     }
   });
 
-  // ── Undo / Redo History ──────────────────────────────────────────────────
-  const [history, setHistory] = useState<
-    { els: WbElement[]; conns: WbConn[] }[]
-  >([{ els: activeBoard.els, conns: activeBoard.conns }]);
-  const [histIdx, setHistIdx] = useState(0);
+  // ── Undo / Redo History (useReducer for atomic, stale-closure-free updates) ──
+  type HistEntry = { els: WbElement[]; conns: WbConn[] };
+  type HistState = { stack: HistEntry[]; idx: number };
+  type HistAction =
+    | { type: "PUSH"; payload: HistEntry }
+    | { type: "JUMP"; idx: number }
+    | { type: "RESET"; payload: HistEntry };
+
+  const historyReducer = (state: HistState, action: HistAction): HistState => {
+    if (action.type === "PUSH") {
+      const next = state.stack.slice(0, state.idx + 1);
+      next.push(action.payload);
+      if (next.length > 50) next.shift();
+      return { stack: next, idx: next.length - 1 };
+    }
+    if (action.type === "JUMP") {
+      const idx = Math.max(0, Math.min(action.idx, state.stack.length - 1));
+      return { ...state, idx };
+    }
+    if (action.type === "RESET") {
+      return { stack: [action.payload], idx: 0 };
+    }
+    return state;
+  };
+
+  const [histState, dispatchHistory] = useReducer(historyReducer, {
+    stack: [{ els: activeBoard.els, conns: activeBoard.conns }],
+    idx: 0,
+  });
+  // Convenience aliases for readability
+  const history = histState.stack;
+  const histIdx = histState.idx;
 
   // Sync history when switching boards (also clear stale connector selection)
   useEffect(() => {
-    setHistory([{ els: activeBoard.els, conns: activeBoard.conns }]);
-    setHistIdx(0);
+    dispatchHistory({ type: "RESET", payload: { els: activeBoard.els, conns: activeBoard.conns } });
     setSelectedIds([]);
     setSelectedConnId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -321,6 +347,10 @@ export function MindMapPage() {
   const [toast, setToast] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const clipboardRef = useRef<{ els: WbElement[]; conns: WbConn[] } | null>(null);
+  // Bug #15 Fix: Keep a mutable ref to settings so keyboard handlers always
+  // read the latest value without stale closure issues or constant re-binding.
+  const settingsRef = useRef(settings);
+  useEffect(() => { settingsRef.current = settings; }, [settings]);
 
   // ── Toast Helper ─────────────────────────────────────────────────────────
   const showToast = useCallback((msg: string) => {
@@ -338,16 +368,10 @@ export function MindMapPage() {
             : b
         )
       );
-
-      setHistory((h) => {
-        const next = h.slice(0, histIdx + 1);
-        next.push({ els: newEls, conns: newConns });
-        if (next.length > 50) next.shift();
-        setHistIdx(next.length - 1);
-        return next;
-      });
+      // Atomic dispatch — no stale closure risk (Bug #1 fix)
+      dispatchHistory({ type: "PUSH", payload: { els: newEls, conns: newConns } });
     },
-    [activeBoardId, histIdx]
+    [activeBoardId]
   );
 
   const handleUndo = useCallback(() => {
@@ -360,7 +384,7 @@ export function MindMapPage() {
           : b
       )
     );
-    setHistIdx(histIdx - 1);
+    dispatchHistory({ type: "JUMP", idx: histIdx - 1 });
     setSelectedIds([]);
   }, [activeBoardId, histIdx, history]);
 
@@ -374,7 +398,7 @@ export function MindMapPage() {
           : b
       )
     );
-    setHistIdx(histIdx + 1);
+    dispatchHistory({ type: "JUMP", idx: histIdx + 1 });
     setSelectedIds([]);
   }, [activeBoardId, histIdx, history]);
 
@@ -430,6 +454,14 @@ export function MindMapPage() {
       showToast("⚠️ Cannot delete the only remaining board.");
       return;
     }
+    // Bug #5 Fix: Revoke any blob URLs from the board being deleted
+    // to free browser memory before removing the board.
+    const boardToDelete = boards.find((b) => b.id === id);
+    boardToDelete?.els.forEach((el) => {
+      if (el.imageSrc?.startsWith("blob:")) {
+        try { URL.revokeObjectURL(el.imageSrc); } catch { /* ignore */ }
+      }
+    });
     const filtered = boards.filter((b) => b.id !== id);
     setBoards(filtered);
     if (activeBoardId === id) {
@@ -556,16 +588,9 @@ export function MindMapPage() {
       setSelectedIds([]);
       return;
     }
-    // Clean up local blob object URLs to prevent memory leaks
-    deletableElements.forEach((el) => {
-      if (el.imageSrc && el.imageSrc.startsWith("blob:")) {
-        try {
-          URL.revokeObjectURL(el.imageSrc);
-        } catch {
-          /* ignore */
-        }
-      }
-    });
+    // Bug #3 Fix: Do NOT revoke blob URLs here — deleted elements still live in
+    // the undo history stack. Revoking now breaks Ctrl+Z image restore.
+    // Blob URLs are ephemeral (cleared on page reload), so no persistent leak.
     const nextEls = activeBoard.els.filter((el) => !deletable.has(el.id));
     const nextConns = activeBoard.conns.filter(
       (c) => !deletable.has(c.fromId) && !deletable.has(c.toId)
@@ -596,6 +621,7 @@ export function MindMapPage() {
     performDeleteSelected();
   }, [activeBoard.els.length, performDeleteSelected, selectedIds.length]);
 
+  // Bug #19 Fix: handleLayerChange forward/backward moves ALL selected elements
   const handleLayerChange = (
     action: "front" | "back" | "forward" | "backward"
   ) => {
@@ -610,22 +636,24 @@ export function MindMapPage() {
     } else if (action === "back") {
       nextEls = [...selected, ...rest];
     } else if (action === "forward") {
-      // Move up by one
-      const index = els.findIndex((e) => selectedIds.includes(e.id));
-      if (index < els.length - 1) {
-        const temp = els[index];
-        els[index] = els[index + 1];
-        els[index + 1] = temp;
-        nextEls = [...els];
+      // Find highest index among all selected elements, swap block up by one
+      const maxIdx = Math.max(...selectedIds.map((id) => els.findIndex((e) => e.id === id)));
+      if (maxIdx < els.length - 1) {
+        const swapTarget = els[maxIdx + 1];
+        const newEls = els.filter((e) => !selectedIds.includes(e.id));
+        const insertAt = newEls.findIndex((e) => e === swapTarget);
+        newEls.splice(insertAt + 1, 0, ...selected);
+        nextEls = newEls;
       }
     } else if (action === "backward") {
-      // Move down by one
-      const index = els.findIndex((e) => selectedIds.includes(e.id));
-      if (index > 0) {
-        const temp = els[index];
-        els[index] = els[index - 1];
-        els[index - 1] = temp;
-        nextEls = [...els];
+      // Find lowest index among all selected elements, swap block down by one
+      const minIdx = Math.min(...selectedIds.map((id) => els.findIndex((e) => e.id === id)));
+      if (minIdx > 0) {
+        const swapTarget = els[minIdx - 1];
+        const newEls = els.filter((e) => !selectedIds.includes(e.id));
+        const insertAt = newEls.findIndex((e) => e === swapTarget);
+        newEls.splice(Math.max(0, insertAt), 0, ...selected);
+        nextEls = newEls;
       }
     }
     pushChange(nextEls, activeBoard.conns);
@@ -664,6 +692,8 @@ export function MindMapPage() {
     showToast("📏 Elements aligned!");
   };
 
+  // Bug #4 Fix: Pre-compute positions into a Map using sorted order,
+  // then apply — prevents z-index order from corrupting distribute logic
   const handleDistributeElements = (
     direction: "horizontal" | "vertical"
   ) => {
@@ -686,16 +716,19 @@ export function MindMapPage() {
     );
     const gap = (totalSpan - totalSizes) / (selected.length - 1);
 
+    // Pre-compute positions in sorted spatial order
+    const posMap = new Map<string, number>();
     let currPos = min;
+    for (const s of selected) {
+      posMap.set(s.id, currPos);
+      currPos += (direction === "horizontal" ? s.w : s.h) + gap;
+    }
+
     const nextEls = activeBoard.els.map((el) => {
-      const idx = selected.findIndex((s) => s.id === el.id);
-      if (idx === -1) return el;
-      const patch =
-        direction === "horizontal"
-          ? { x: currPos }
-          : { y: currPos };
-      currPos += (direction === "horizontal" ? el.w : el.h) + gap;
-      return { ...el, ...patch };
+      if (!posMap.has(el.id)) return el;
+      return direction === "horizontal"
+        ? { ...el, x: posMap.get(el.id)! }
+        : { ...el, y: posMap.get(el.id)! };
     });
     pushChange(nextEls, activeBoard.conns);
     showToast("↔️ Distributed evenly!");
@@ -858,6 +891,10 @@ export function MindMapPage() {
       try {
         const src = await compressImageFile(file);
         const image = new Image();
+        // Bug #2 Fix: Capture activeBoardId in closure (not activeBoard.els).
+        // Use setBoards functional update inside onload to always append to
+        // the LATEST board state — prevents async race condition data loss.
+        const capturedBoardId = activeBoardId;
         image.onload = () => {
           const maxW = 500;
           const maxH = 360;
@@ -886,7 +923,15 @@ export function MindMapPage() {
             strokeStyle: "solid",
             opacity: 1,
           };
-          pushChange([...activeBoard.els, el], activeBoard.conns);
+          // Use functional update to always append to latest board state
+          setBoards((prev) =>
+            prev.map((b) =>
+              b.id === capturedBoardId
+                ? { ...b, els: [...b.els, el], updatedAt: Date.now() }
+                : b
+            )
+          );
+          dispatchHistory({ type: "PUSH", payload: { els: [...activeBoard.els, el], conns: activeBoard.conns } });
           setSelectedIds([el.id]);
           setSelectedConnId(null);
           showToast("🖼️ Image added. Resize and rotate it from the canvas handles.");
@@ -896,7 +941,7 @@ export function MindMapPage() {
         showToast("⚠️ Failed to load image.");
       }
     },
-    [activeBoard, pushChange, showToast]
+    [activeBoardId, activeBoard, showToast]
   );
 
   // ── Embed video / media / gif element ───────────────────────────────────
@@ -1450,7 +1495,9 @@ export function MindMapPage() {
 
       if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key) && selectedIds.length > 0) {
         e.preventDefault();
-        const step = settings.snapToGrid ? 20 : 1;
+        // Bug #15 Fix: Use settingsRef.current to read latest snap setting
+        const snapOn = settingsRef.current.snapToGrid;
+        const step = snapOn ? 20 : 1;
         const amount = e.shiftKey ? step * 5 : step;
         const dx = e.key === "ArrowLeft" ? -amount : e.key === "ArrowRight" ? amount : 0;
         const dy = e.key === "ArrowUp" ? -amount : e.key === "ArrowDown" ? amount : 0;
@@ -1458,8 +1505,8 @@ export function MindMapPage() {
           selectedIds.includes(el.id)
             ? {
                 ...el,
-                x: settings.snapToGrid ? Math.round((el.x + dx) / 20) * 20 : el.x + dx,
-                y: settings.snapToGrid ? Math.round((el.y + dy) / 20) * 20 : el.y + dy,
+                x: snapOn ? Math.round((el.x + dx) / 20) * 20 : el.x + dx,
+                y: snapOn ? Math.round((el.y + dy) / 20) * 20 : el.y + dy,
               }
             : el
         );

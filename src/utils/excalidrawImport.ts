@@ -42,7 +42,10 @@ interface ExcalidrawElement {
 
 /* ── Color helpers for dark-theme safety ─────────────────────────────── */
 function hexLuminance(hex: string): number {
-  const c = hex.replace("#", "").trim();
+  let c = hex.replace("#", "").trim();
+  // Bug #12 Fix: Expand 3-char shorthand hex (#fff → #ffffff) before computing
+  // luminance. Without this, #fff returns 0.5 and is misclassified as dark.
+  if (c.length === 3) c = c.split("").map((x) => x + x).join("");
   if (c.length < 6) return 0.5;
   const r = parseInt(c.slice(0, 2), 16) / 255;
   const g = parseInt(c.slice(2, 4), 16) / 255;

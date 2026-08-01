@@ -112,7 +112,10 @@ export function GenerateModal({
       const json = await res.json();
       const text: string =
         json?.choices?.[0]?.message?.content ?? json?.choices?.[0]?.text ?? "";
-      const cleaned = text.replace(/```(?:mermaid|markdown)?/gi, "").trim();
+      // Bug #14 Fix: Use capture group to extract only content BETWEEN backticks.
+      // Prevents surrounding LLM prose from mixing with diagram syntax and crashing the parser.
+      const fenceMatch = text.match(/```(?:mermaid|markdown)?\s*([\s\S]*?)\s*```/i);
+      const cleaned = fenceMatch ? fenceMatch[1].trim() : text.replace(/```/g, "").trim();
       if (!cleaned) {
         showToast("⚠️ Empty response from the model.");
         return;

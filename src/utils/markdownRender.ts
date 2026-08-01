@@ -23,10 +23,15 @@ function inline(text: string): string {
   let t = escapeHtml(text);
   // code spans first (protect their contents)
   t = t.replace(/`([^`]+)`/g, (_m, c) => `<code class="ink-code">${c}</code>`);
-  // links
+  // links — only http/https URLs allowed (no javascript: XSS)
   t = t.replace(
     /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
-    (_m, label, url) => `<a href="${url}" target="_blank" rel="noopener" class="ink-link">${label}</a>`
+    (_m, label, url) => {
+      // Bug #16 Fix: Extra XSS defense-in-depth \u2014 strip javascript: protocol even
+      // if it somehow bypasses the https?:// anchor in the regex above.
+      const safeUrl = /^javascript:/i.test(url) ? "#" : url;
+      return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="ink-link">${label}</a>`;
+    }
   );
   // bold, italic, strike
   t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");

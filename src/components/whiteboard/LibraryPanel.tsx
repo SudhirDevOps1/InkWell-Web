@@ -27,6 +27,9 @@ interface LibraryPanelProps {
 
 function LibraryThumbnail({ item }: { item: LibraryItem }) {
   const els = item.elements;
+  // Bug #17 Fix: Guard empty elements array — Math.min([]) returns Infinity,
+  // which crashes SVG viewBox with a DOM exception.
+  if (!els || els.length === 0) return null;
   const minX = Math.min(...els.map((e) => e.x));
   const minY = Math.min(...els.map((e) => e.y));
   const maxX = Math.max(...els.map((e) => e.x + e.w));

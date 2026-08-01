@@ -52,6 +52,10 @@ export function toVimeoEmbed(raw: string): string | null {
 export function compressImageFile(file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.82): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/") || file.type.includes("gif")) {
+      // Bug #10 Fix: Guard against huge files causing OOM crash
+      if (file.size > 20 * 1024 * 1024) {
+        return reject(new Error(`File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum 20 MB for GIFs and non-image files.`));
+      }
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result as string);
       reader.onerror = reject;
@@ -62,7 +66,10 @@ export function compressImageFile(file: File, maxWidth = 1200, maxHeight = 1200,
     const img = new Image();
     const url = URL.createObjectURL(file);
     img.onload = () => {
-      URL.revokeObjectURL(url);
+      // Bug #11 Fix: Do NOT revoke the object URL here.
+      // We need it available until we've drawn to canvas and gotten the data URL.
+      // If getContext("2d") fails, we fall back to FileReader instead of
+      // resolving a dead blob URL.
       let { width, height } = img;
       if (width > maxWidth || height > maxHeight) {
         if (width / height > maxWidth / maxHeight) {
@@ -79,10 +86,17 @@ export function compressImageFile(file: File, maxWidth = 1200, maxHeight = 1200,
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       if (!ctx) {
-        resolve(url);
+        // Canvas context unavailable — fall back to FileReader data URL (persistent)
+        URL.revokeObjectURL(url);
+        const fr = new FileReader();
+        fr.onload = () => resolve(fr.result as string);
+        fr.onerror = (err) => reject(err);
+        fr.readAsDataURL(file);
         return;
       }
       ctx.drawImage(img, 0, 0, width, height);
+      // Safe to revoke now — canvas has captured the image data
+      URL.revokeObjectURL(url);
       resolve(canvas.toDataURL("image/jpeg", quality));
     };
     img.onerror = (err) => {
