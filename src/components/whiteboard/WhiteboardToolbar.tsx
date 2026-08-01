@@ -210,22 +210,14 @@ export const WhiteboardToolbar: React.FC<WhiteboardToolbarProps> = ({
         {/* Brand & Board Tabs */}
         <div className="flex items-center gap-2 sm:gap-4 w-full md:w-auto justify-between md:justify-start overflow-x-auto scrollbar-none">
           <div className="flex items-center gap-2.5 shrink-0">
-            {/* Inkwell brand mark — ink drop + node graph */}
-            <div className="w-9 h-9 rounded-[12px] bg-[#0b1120] border border-white/10 flex items-center justify-center shadow-lg shadow-indigo-950/60 overflow-hidden">
-              <svg viewBox="0 0 64 64" className="w-full h-full">
-                <defs>
-                  <linearGradient id="inkwell-g" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stopColor="#22d3ee" />
-                    <stop offset="0.55" stopColor="#6366f1" />
-                    <stop offset="1" stopColor="#d946ef" />
-                  </linearGradient>
-                </defs>
-                <path d="M32 10c7 9 13 15.6 13 23a13 13 0 0 1-26 0c0-7.4 6-14 13-23Z" fill="url(#inkwell-g)" />
-                <circle cx="25" cy="35" r="3.4" fill="#0b1120" />
-                <circle cx="38" cy="30" r="3.4" fill="#0b1120" />
-                <circle cx="33" cy="42" r="3.4" fill="#0b1120" />
-                <path d="M25 35l13-5m-5 12l5-12m-8 7-5-2" stroke="#0b1120" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+            {/* Inkwell logo — actual app icon */}
+            <div className="w-9 h-9 rounded-[12px] border border-white/10 shadow-lg shadow-indigo-950/60 overflow-hidden shrink-0">
+              <img
+                src="/inkwell.png"
+                alt="Inkwell logo"
+                className="w-full h-full object-cover"
+                draggable={false}
+              />
             </div>
             <div>
               <h1 className="font-display text-base font-bold text-white tracking-tight flex items-center gap-2">

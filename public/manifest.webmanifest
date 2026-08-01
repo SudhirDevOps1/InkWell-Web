@@ -11,9 +11,21 @@
   "categories": ["productivity", "education", "graphics"],
   "icons": [
     {
-      "src": "inkwell-icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "inkwell-32.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "inkwell-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "inkwell-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ],
@@ -22,7 +34,7 @@
       "name": "New Teaching Board",
       "short_name": "New Board",
       "url": ".?new=1",
-      "icons": [{ "src": "inkwell-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+      "icons": [{ "src": "inkwell-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }

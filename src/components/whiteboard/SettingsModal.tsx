@@ -1,6 +1,5 @@
 import {
   X,
-  Settings,
   MonitorUp,
   Eye,
   EyeOff,
@@ -152,8 +151,8 @@ export function SettingsModal({
       >
         <div className="flex items-center justify-between border-b border-white/10 bg-slate-950/60 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 text-slate-950 shadow-lg shadow-cyan-500/20">
-              <Settings className="h-5 w-5" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl overflow-hidden border border-white/10 shadow-lg shadow-indigo-950/50">
+              <img src="/inkwell.png" alt="Inkwell" className="w-full h-full object-cover" draggable={false} />
             </div>
             <div>
               <h2 className="font-display text-base font-bold text-white">Inkwell Settings</h2>
