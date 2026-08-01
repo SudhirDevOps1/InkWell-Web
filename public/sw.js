@@ -1,5 +1,14 @@
-const CACHE = "inkwell-shell-v1";
-const CORE = ["./", "./index.html", "./manifest.webmanifest", "./inkwell-icon.svg"];
+const CACHE = "inkwell-shell-v2";
+const CORE = [
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./inkwell.png",
+  "./inkwell-32.png",
+  "./inkwell-192.png",
+  "./inkwell-512.png",
+  "./inkwell-icon.svg"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(CORE)).catch(() => undefined));
