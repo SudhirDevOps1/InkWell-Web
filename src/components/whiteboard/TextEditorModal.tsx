@@ -23,6 +23,7 @@ interface TextEditorModalProps {
   onChange: (value: string) => void;
   onSave: () => void;
   onCancel: () => void;
+  onAiExpand?: () => void;
 }
 
 type LineKind = "bullet" | "number" | "todo" | "done" | "plain";
@@ -61,6 +62,7 @@ export function TextEditorModal({
   onChange,
   onSave,
   onCancel,
+  onAiExpand,
 }: TextEditorModalProps) {
   const areaRef = useRef<HTMLTextAreaElement | null>(null);
   const [activeKinds, setActiveKinds] = useState<Set<LineKind>>(new Set());
@@ -390,6 +392,18 @@ export function TextEditorModal({
           <ToolButton onClick={clearFormatting} title="Clear list formatting">
             <Eraser className="h-4 w-4" />
           </ToolButton>
+
+          <span className="mx-1 h-5 w-px bg-white/10" />
+
+          {onAiExpand && (
+            <button
+              onClick={onAiExpand}
+              className="flex items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-fuchsia-500 px-2 py-1 text-[11px] font-bold text-white shadow-md transition-all hover:scale-105"
+              title="AI Magic: Expand text & ideas with AI"
+            >
+              ✨ AI Expand
+            </button>
+          )}
         </div>
 
         <div className="p-4">

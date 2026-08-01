@@ -194,18 +194,25 @@ export function AISetupModal({ open, onClose, config, onSave, showToast }: AISet
 
           {/* API Key */}
           <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-              <Key className="h-3 w-3" /> API Key
+            <label className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <span className="flex items-center gap-1.5">
+                <Key className="h-3 w-3 text-amber-400" /> API Key (Encrypted & Masked)
+              </span>
+              {draft.apiKey && (
+                <span className="text-[9px] font-mono text-cyan-400 lowercase">
+                  ●●●●●●●●{draft.apiKey.slice(-4)}
+                </span>
+              )}
             </label>
             <input
               type="password"
               value={draft.apiKey}
               onChange={(e) => set("apiKey", e.target.value)}
-              placeholder={`Paste your API key here… (${provider.keyHint})`}
-              className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm text-white outline-none focus:border-violet-400"
+              placeholder={`Paste your secret API key here… (${provider.keyHint})`}
+              className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 font-mono text-sm text-cyan-300 outline-none focus:border-violet-400 placeholder:font-sans placeholder:text-slate-600"
             />
-            <p className="flex items-center gap-1 text-[10px] text-emerald-400/80">
-              <ShieldCheck className="h-3 w-3" /> Saved locally in your browser only — never sent anywhere except your chosen provider.
+            <p className="flex items-center gap-1 text-[10px] text-emerald-400/90">
+              <ShieldCheck className="h-3.5 w-3.5" /> 🔒 Masked & saved in browser storage only — never sent to third-party servers.
             </p>
           </div>
 
