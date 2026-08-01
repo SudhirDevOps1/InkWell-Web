@@ -1,20 +1,20 @@
 <div align="center">
 
-<img src="public/inkwell-icon.svg" alt="Inkwell" width="110" />
+<img src="public/inkwell.png" alt="Inkwell" width="110" style="border-radius: 22px;" />
 
 # Inkwell Studio
 
-### Infinite whiteboard · Mind maps · Media board — 100% free, offline-first
+### Infinite whiteboard · Mind maps · AI Diagramming · Media board — 100% free, offline-first
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-22d3ee?style=for-the-badge)](LICENSE)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vite.dev)
-[![PWA](https://img.shields.io/badge/PWA-installable-6366f1?style=for-the-badge)](https://web.dev/progressive-web-apps/)
+[![PWA](https://img.shields.io/badge/PWA-offline--first-6366f1?style=for-the-badge)](https://web.dev/progressive-web-apps/)
 
 **Every feature is free. No account. No paywall. No watermark. No telemetry.**
 
-[Live Demo](https://github.com/SudhirDevOps1/InkWell-Web.git) · [Features](#-features) · [Quick Start](#-quick-start) · [Docs](docs/00-START-HERE.md) · [Desktop](electron/README.md) · [Shortcuts](#-keyboard-shortcuts)
+[🌐 Live App](https://inkwell-web.pages.dev/) · [Features](#-features) · [Quick Start](#-quick-start) · [Docs](docs/00-START-HERE.md) · [Shortcuts](#-keyboard-shortcuts)
 
 </div>
 
@@ -70,12 +70,14 @@ Your data never leaves your device. Boards are stored in your browser's local st
 - **✨ Flowing particles** — animated energy dots travel along connections (toggleable)
 - **Glowing connectors** — neon glow effect for presentations
 
-### 🤖 AI & Diagram Generation
-- **Mermaid → diagram** — paste `graph TD` flowchart syntax, get editable shapes
-- **Markdown → mind map** — headings and bullets become a branch tree
-- **AI text-to-diagram** — describe what you want in plain English
-- **Bring your own key** — OpenAI, Groq (free tier), OpenRouter (free models), Together AI, Ollama (local, no key), or any OpenAI-compatible custom endpoint
-- API keys stored **locally only**, with a built-in connection tester
+### 🤖 AI Integration & Multi-Modal Generators
+- **Interactive AI Generator** — Choose what to create:
+  - 📝 **Markdown Mind Maps** (nested topics & concepts)
+  - 📊 **Mermaid Diagrams** (Flowcharts, Architecture, Sequence, Mindmaps)
+  - 🎨 **Visual Canvas Elements** (custom colored shape groups)
+- **Multi-Provider Support** — Connect OpenAI (GPT-4o), Groq (free tier), OpenRouter, Together AI, Ollama (local offline AI), or custom OpenAI-compatible endpoints.
+- **🔐 Secure Password-Masked API Keys** — API keys are stored strictly in `localStorage` in masked password form (`••••••••`), preventing screen-leak exposure during video calls or recordings.
+- Built-in API connection validator to verify keys instantly.
 
 ### 🖼️ Media
 - **Image upload** — file picker, drag-and-drop, or clipboard paste
@@ -123,8 +125,10 @@ Your data never leaves your device. Boards are stored in your browser's local st
 - **Copy image** — put a PNG straight on the system clipboard
 - Transparent / light / dark backgrounds
 - Text keeps its line breaks, bullets and checklists in exports
-- **PWA installable** — works fully offline after first load
-- Auto-save to local storage
+### ⚡ PWA & Smooth Offline Performance
+- **Installable Web App (PWA)** — Install directly onto Windows, macOS, Android, or iOS as a standalone app.
+- **100% Offline Capability** — Works smoothly without internet after initial download.
+- All drawing tools, local video playback, shape recognition, $1 Unistroke handwriting engine, mind map auto-layout, PDF export, and local storage auto-save function 100% offline.
 
 ---
 
