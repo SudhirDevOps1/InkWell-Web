@@ -1,0 +1,28 @@
+{
+  "name": "Inkwell — Infinite Whiteboard & Mind Maps",
+  "short_name": "Inkwell",
+  "description": "Local-first infinite whiteboard, mind maps, teaching canvas and media board by SudhirDevOps1.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1120",
+  "theme_color": "#0b1120",
+  "categories": ["productivity", "education", "graphics"],
+  "icons": [
+    {
+      "src": "inkwell-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Teaching Board",
+      "short_name": "New Board",
+      "url": ".?new=1",
+      "icons": [{ "src": "inkwell-icon.svg", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}
