@@ -586,7 +586,7 @@ export function MindMapPage() {
     if (deletingWholeBoard || deletingLargeSet) {
       setConfirmDialog({
         title: deletingWholeBoard ? "Delete every selected item?" : "Delete many items?",
-        message: `You selected ${selectedIds.length} items. This action can be undone with Ctrl+Z, but it will remove related connectors too.`,
+        message: `You selected ${selectedIds.length} items. You can restore them anytime using Undo (Ctrl+Z).`,
         confirmLabel: "Delete selected",
         tone: "danger",
         onConfirm: performDeleteSelected,
