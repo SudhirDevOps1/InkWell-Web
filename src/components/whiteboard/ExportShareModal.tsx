@@ -530,11 +530,11 @@ export const ExportShareModal: React.FC<ExportShareModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col animate-zoom-in"
+        className="bg-slate-900 border border-white/10 rounded-3xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-zoom-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-slate-950/60 border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 bg-slate-950/60 border-b border-white/10 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-slate-950 font-black">
               <Download className="w-5 h-5" />
@@ -557,7 +557,7 @@ export const ExportShareModal: React.FC<ExportShareModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
           {/* Export options */}
           <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 space-y-3">
             <div className="flex flex-wrap items-center gap-4">
